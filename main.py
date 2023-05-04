@@ -20,7 +20,7 @@ def mostrar_opcoes(texto: str, opcoes: list) -> bool:
     limpar()
     titulo(texto)
     for num, opcao in enumerate(opcoes):
-        print(f'[ {num} ] {opcao.indentificador}')
+        print(f'[ {num} ] {opcao.nome}')
     separador()
     escolha = ler_opcao('ESCOLHA: ', len(opcoes))
     separador()
@@ -47,12 +47,13 @@ def iniciar() -> bool:
 def atualizar() -> list:
     # OPÇÕES DO MENU DE DISCIPLINAS
     lista = disciplinas.copy()
-    lista.extend(opcoes)
+    lista.extend(opcoes_main)
     return lista
 
 def adicionar_disciplina() -> bool:
     disciplinas.append(Disciplina(input('Nome da disciplina: ')))
     return True
+
 
 # FUNÇÕES DE SAÍDA DA INTERFACE
 def sair() -> bool:
@@ -68,55 +69,78 @@ def sair() -> bool:
     print(f'Tenha {despedida}. Até mais!')
     return False
 
+def importar_disciplinas() -> list:
+    disciplinas = []
+    with open('disciplinas.csv', 'r', encoding='utf-8') as arquivo:
+        arquivo = arquivo.readlines()
+        
+        for linha in arquivo:
+            info = linha.replace('\n','').split(',')
+
+            nome = info[0]
+            prof = info[1]
+            notas = Notas(info[2])
+
+            disciplinas.append(Disciplina(nome, prof, notas))
+    return disciplinas
+
 # CLASSES 
+class Notas: # formato da entrada = 58:60 30:40;66:100
+    def __init__(self, notas: str) -> None:
+        self.notas = [] # formato = [[[58, 60], [30, 40]], [[66, 100]]]
+        for etapa in notas.split(';'):
+            lista = []
+            for par_nota in etapa.split():
+                lista.append([int(i) for i in par_nota.split(':')])
+            self.notas.append(lista)
+        
+    def mostrar(self) -> None:
+        for num, nota in enumerate(self.notas): # [[58, 60], [30, 40]]
+            print(f'NOTA {num + 1}:')
+            for par in nota: # [58, 60]
+                print(f'  {par[0]}/{par[1]} ({par[0] / par[1]:.2f} %)')        
+                
+
 class Opcao:
-    def __init__(self, indentificador: str, funcao) -> None:
-        self.indentificador = indentificador
+    def __init__(self, nome: str, funcao) -> None:
+        self.nome = nome
         self.funcao = funcao
 
 
 class Disciplina(Opcao):
-    def __init__(self, indentificador: str) -> None:
-        super().__init__(indentificador, self.menu)
+    def __init__(self, nome: str, professor: str, notas: Notas) -> None:
+        super().__init__(nome, self.menu)
         self.dados = {
-            'Professor(a)': '-',
-            'Sala': '-',
+            'Professor(a)': professor,
         }
-        self.notas = [
-            [70, 100],
-            [60, 90],
-            
-        ]
+        self.notas = notas
     
     def info(self) -> None:
         limpar()
-        titulo(self.indentificador)
+        titulo(self.nome)
         for key, value in self.dados.items():
             print(f'{key}: {value}')
         separador()
-        print('NOTAS: ')
-        for nota in self.notas:
-            print(nota)
-
 
     def menu(self) -> bool:
         self.info()
         input()
         return True
-        
-disciplinas = [
-    Disciplina('Fundamentos de Eletricidade'),
-    Disciplina('Inglês Instrumental'),
-    Disciplina('Introdução à Telemática'),
-    Disciplina('Laboratório de Sistemas Aberto'),
-    Disciplina('Português Instrumental'),
-    Disciplina('Programação 1'),
-    Disciplina('Pré-Cálculo'),
-]
 
-opcoes = [
+
+disciplinas = importar_disciplinas()
+
+opcoes_main = [
     Opcao('Adicionar Disciplina', adicionar_disciplina),
     Opcao('Sair', sair)
+]
+
+opcoes_disc = [
+    Opcao('Editar informações', editar_infos),
+    Opcao('Adicionar nota', adicionar_nota),
+    Opcao('Modificar nota', modificar_nota),
+    Opcao('Apagar Disciplina', apagar_disciplina),
+    Opcao('Voltar Menu', voltar)
 ]
 
 rodando = True
